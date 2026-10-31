@@ -1,18 +1,17 @@
-# [A] __init__(), from_folder(), __str__(), load_data()
+# [A] __init__(), load_data()
 from pathlib import Path
 
 import pytest
 
-from conftest import SmallLoader
 from src.data_loader import DataLoader
 
 RAW_DIR = Path(__file__).resolve().parents[1] / 'data' / 'raw'
 
 
-def test_init_starts_empty(tmp_path):
-    loader = DataLoader(tmp_path / 'a.csv', tmp_path / 'b.csv',
-                        tmp_path / 'c.shp', '20261004')
-    assert loader.bus_file == tmp_path / 'a.csv'
+def test_init_builds_paths_and_starts_empty(tmp_path):
+    loader = DataLoader(tmp_path, '20261004')
+    assert loader.bus_file == tmp_path / '서울시 버스정류소 위치정보.csv'
+    assert loader.district_file == tmp_path / 'districts' / 'districts.shp'
     assert loader.bus_stop_data is None
     assert loader.population_data is None
     assert loader.district_data is None
@@ -20,24 +19,8 @@ def test_init_starts_empty(tmp_path):
 
 
 @pytest.mark.parametrize('given', ['20261004', '2026-10-04', 20261004])
-def test_init_normalizes_date(given):
-    assert DataLoader('a', 'b', 'c', given).target_date == '20261004'
-
-
-def test_from_folder_builds_paths(tmp_path):
-    loader = DataLoader.from_folder(tmp_path, '20261004')
-    assert loader.bus_file == tmp_path / '서울시 버스정류소 위치정보.csv'
-    assert loader.district_file == tmp_path / 'districts' / 'districts.shp'
-
-
-def test_from_folder_keeps_subclass(tmp_path):
-    assert type(SmallLoader.from_folder(tmp_path, '20261004')) is SmallLoader
-
-
-def test_str_before_and_after_run(loader):
-    assert str(loader) == 'DataLoader(20261004, 아직 실행 전)'
-    loader.run()
-    assert str(loader) == 'DataLoader(20261004, 정류장 3개, 자치구 2개)'
+def test_init_normalizes_date(tmp_path, given):
+    assert DataLoader(tmp_path, given).target_date == '20261004'
 
 
 def test_load_reads_three_tables(loader):
@@ -94,7 +77,7 @@ def test_unreadable_encoding_raises(loader):
 @pytest.mark.skipif(not (RAW_DIR / DataLoader.BUS_FILE).exists(),
                     reason='data/raw에 실제 원본이 없음')
 def test_load_real_files():
-    loader = DataLoader.from_folder(RAW_DIR, '20261004')
+    loader = DataLoader(RAW_DIR, '20261004')
     loader.load_data()
     assert loader.validation_report['raw_rows'] == {
         'bus_stops': 11236, 'population': 35672, 'districts': 25}

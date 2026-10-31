@@ -58,7 +58,7 @@ def make_loader(tmp_path):
              encoding='cp949'):
         raw_dir = tmp_path / 'raw'
         write_raw(raw_dir, bus_rows, population_rows, districts, encoding)
-        return SmallLoader.from_folder(raw_dir, target_date)
+        return SmallLoader(raw_dir, target_date)
     return make
 
 
